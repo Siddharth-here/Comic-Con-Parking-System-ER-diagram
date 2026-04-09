@@ -1,0 +1,79 @@
+vehicle [icon: car, color: red] {
+  id SERIAL pk
+  License_Plate VARCHAR(20) unique not null
+  Category_ID INT fk 
+  Owner_Name VARCHAR(50)
+}
+
+vehicle_category [icon: truck, color: purple] {
+  id SERIAL pk
+  Type_Name VARCHAR(20) not null 
+  Multiplier_Rate DECIMAL(5,2)
+}
+
+zone_level [icon: building, color: blue] {
+  id SERIAL pk
+  Zone_Name VARCHAR(20) not null
+  Level_Number INT not null
+  Total_Capacity INT
+}
+
+spot_category [icon: tag, color: orange] {
+  id SERIAL pk
+  Category_Name VARCHAR(30) not null 
+  Base_Rate DECIMAL(10,2)
+}
+
+parking_spot [icon: compass, color: green] {
+  id SERIAL pk
+  Spot_Number VARCHAR(10) unique not null
+  Zone_ID INT fk 
+  Category_ID INT fk 
+  Status VARCHAR(15) 
+}
+
+parking_session [icon: clock, color: yellow] {
+  id SERIAL pk
+  Vehicle_ID INT fk 
+  Spot_ID INT fk 
+  Entry_Timestamp TIMESTAMP not null
+  Exit_Timestamp TIMESTAMP
+}
+
+parking_ticket [icon: ticket, color: blue] {
+  id SERIAL pk
+  Session_ID INT unique fk 
+  Ticket_Code VARCHAR(50) unique
+  Issued_At TIMESTAMP
+}
+
+payment_record [icon: credit-card, color: purple] {
+  id SERIAL pk
+  Session_ID INT unique fk 
+  Amount_Paid DECIMAL(10,2) not null
+  Payment_Status VARCHAR(20) 
+  Payment_Method VARCHAR(20) 
+  Transaction_Time TIMESTAMP
+}
+
+// 1. One vehicle can enter multiple times (1:N)
+// Each session belongs to one vehicle, but a vehicle has many sessions.
+ vehicle.id < parking_session.Vehicle_ID
+
+// 2. One parking spot serves many vehicles over time (1:N)
+// Each session uses one spot, but one spot is linked to many historical sessions.
+ parking_spot.id < parking_session.Spot_ID
+
+// 3. Zones/Levels contain multiple parking spots (1:N)
+ zone_level.id < parking_spot.Zone_ID
+
+// 4. Different vehicle types and reserved categories (1:N)
+// Links vehicles to their types (Bike, SUV, etc.)
+ vehicle_category.id < vehicle.Category_ID
+// Links spots to their designations (VIP, Staff, EV Charging)
+ spot_category.id < parking_spot.Category_ID
+
+// 5. Tickets and Payments connected to Sessions (1:1)
+// Each session has exactly one unique ticket and one final payment.
+ parking_session.id - parking_ticket.Session_ID
+ parking_session.id - payment_record.Session_ID
